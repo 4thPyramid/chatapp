@@ -1,94 +1,75 @@
-import 'package:bloc/bloc.dart';
-import 'package:chatapp/core/services/chat/chat.dart';
+import 'dart:async';
+import 'package:logger/logger.dart';  // استيراد مكتبة logger
 import 'package:chatapp/core/services/chat/messages.dart';
-import 'package:meta/meta.dart';
-import 'package:logger/logger.dart';
-
-import '../../data/domain/repos/caht_repo/caht_repo.dart';
+import 'package:chatapp/pages/data/domain/repos/caht_repo/caht_repo.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'chat_cupit_state.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   final ChatRepo chatRepo;
-  final Logger logger;
+  final Logger logger = Logger();
+  StreamSubscription? _messageSubscription;
 
-  ChatCubit({required this.chatRepo})
-      : logger = Logger(printer: PrettyPrinter()),
-        super(ChatInitial());
+  ChatCubit({required this.chatRepo}) : super(ChatInitial());
 
-  // دالة لجلب المستخدم الحالي (يتعامل الآن مع كائن Chat)
-  void getCurrentUser() async {
-    logger.i("getCurrentUser called");
-    try {
-      final result = await chatRepo.getCurrentUser(); // يتم الآن جلب كائن Chat
-      result.fold(
-        (failure) {
-          logger.e("Error getting current user: ${failure.message}");
-          emit(ChatError(failure.message));
-        },
-        (chat) {
-          if (chat != null) {
-            logger.i("Current user loaded successfully: ${chat.userEmail}");
-            emit(ChatUserLoaded(chat:  chat));  // إرسال كائن Chat
-          } else {
-            logger.i("No chat found for current user.");
-            emit(ChatError("No chat found for current user"));
-          }
-        },
-      );
-    } catch (e) {
-      logger.e("Exception in getCurrentUser: $e");
-      emit(ChatError(e.toString()));
-    }
-  }
-
-  // إرسال رسالة
-  Future<void> sendMessage(String chatId, String userId, String text) async {
-    logger.i("sendMessage called with chatId: $chatId, userId: $userId, text: $text");
+  Future<void> checkIfChatExists(String currentUserId, String otherUserId) async {
     emit(ChatLoading());
-    try {
-      final result = await chatRepo.sendMessage(chatId, userId, text);
-      result.fold(
-        (failure) {
-          logger.e("Error sending message: ${failure.message}");
-          emit(ChatError(failure.message));
-        },
-        (_) {
-          logger.i("Message sent successfully.");
-          emit(ChatMessageSent());
-        },
-      );
-    } catch (e) {
-      logger.e("Exception in sendMessage: $e");
-      emit(ChatError(e.toString()));
-    }
+    logger.i('Checking if chat exists between $currentUserId and $otherUserId');
+    final result = await chatRepo.checkIfChatExists(currentUserId, otherUserId);
+    result.fold(
+      (failure) {
+        logger.e('Error: ${failure.message}');
+        if (!isClosed) emit(ChatError(failure.message));
+      },
+      (chatId) {
+        if (chatId != null) {
+          logger.i('Chat exists with ID: $chatId');
+          if (!isClosed) emit(ChatChatExists(chatId: chatId));
+        } else {
+          logger.i('No chat found between the users');
+          if (!isClosed) emit(ChatNoChatFound());
+        }
+      },
+    );
   }
 
-  // جلب الرسائل
-  Stream<List<Message>> getMessages(String chatId) {
-    logger.i("getMessages called for chatId: $chatId");
-    return chatRepo.getMessages(chatId);
-  }
-
-  // جلب قائمة الدردشات
-  Future<void> getChats() async {
-    logger.i("getChats called");
+  Future<void> sendMessage(String chatId, String senderId, String receiverId, String text) async {
     try {
       emit(ChatLoading());
-      final result = await chatRepo.getChats();
+      logger.i('Sending message from $senderId to $receiverId in chat $chatId');
+      final result = await chatRepo.sendMessage(chatId, senderId, receiverId, text);
+
       result.fold(
         (failure) {
-          logger.e("Error getting chats: ${failure.message}");
-          emit(ChatError(failure.message));
+          logger.e('Error sending message: ${failure.message}');
+          if (!isClosed) emit(ChatError(failure.message));
         },
-        (chats) {
-          logger.i("Chats loaded successfully: ${chats.length} chats found.");
-          emit(ChatChatsLoaded(chats: chats));
-        },
+        (_) => listenToMessages(chatId),  // استمع للرسائل الجديدة بعد إرسال الرسالة
       );
     } catch (e) {
-      logger.e("Exception in getChats: $e");
-      emit(ChatError(e.toString()));
+      logger.e('Error sending message: $e');
+      if (!isClosed) emit(ChatError(e.toString()));
     }
+  }
+
+  void listenToMessages(String chatId) {
+    _messageSubscription?.cancel(); // إلغاء أي اشتراك سابق
+    final messagesStream = chatRepo.getMessages(chatId); // الحصول على تدفق الرسائل من الـ repo
+    _messageSubscription = messagesStream.listen(
+      (messages) {
+        logger.i('Loaded ${messages.length} messages for chat $chatId');
+        if (!isClosed) emit(ChatMessagesLoaded(messages: messages));  // تحديث الحالة بالرسائل الجديدة
+      },
+      onError: (error) {
+        if (!isClosed) emit(ChatError('Error fetching messages: $error'));  // التعامل مع الأخطاء
+      },
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _messageSubscription?.cancel(); // إلغاء الاشتراك عند الإغلاق
+    return super.close();
   }
 }

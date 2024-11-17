@@ -5,69 +5,95 @@ import 'package:chatapp/core/services/chat_service.dart';
 import 'package:chatapp/pages/data/domain/repos/caht_repo/caht_repo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
-import 'package:firebase_auth/firebase_auth.dart';  // استيراد FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatRepoImpl implements ChatRepo {
   final ChatService chatService;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   ChatRepoImpl({required this.chatService});
 
+  /// إرسال رسالة
   @override
-  Future<Either<Failure, void>> sendMessage(String chatId, String userId, String text) async {
+  Future<Either<Failure, void>> sendMessage(String chatId, String senderId, String receiverId, String text) async {
     try {
-      await chatService.sendMessage(chatId, userId, text);
-      return Right(null); // الرسالة اتبعتت بنجاح
+      // إضافة الرسالة إلى مجموعة الرسائل
+      await _firestore.collection('chats').doc(chatId).collection('messages').add({
+        'text': text,
+        'senderId': senderId,
+        'receiverId': receiverId,  // إضافة receiverId
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      // تحديث بيانات المحادثة الرئيسية
+      await _firestore.collection('chats').doc(chatId).update({
+        'lastMessage': text,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      print('Message sent: $text to chat $chatId by user $senderId');
+      return Right(null); // تم إرسال الرسالة بنجاح
     } catch (e) {
-      return Left(ServerFailure(e.toString()));  // لو في مشكلة مع السيرفر
+      print('Error sending message: $e');
+      return Left(ServerFailure('Error sending message: ${e.toString()}')); // إعادة خطأ
     }
   }
 
+  /// جلب الرسائل
   @override
   Stream<List<Message>> getMessages(String chatId) {
     return chatService.getMessages(chatId);
   }
 
-  @override
-  Future<Either<Failure, List<Chat>>> getChats() async {
-    try {
-      // هنا نقوم بجلب الدردشات من الـ Firestore
-      final chatDocs = await chatService.getChats();
-      
-      // التأكد من أن الكود يقوم بتحويل الـ DocumentSnapshot إلى كائن Chat بشكل صحيح
-      final chats = chatDocs.map((doc) {
-        return Chat.fromFirestore(doc); // تحويل الوثيقة إلى كائن Chat
-      }).toList();
-
-      return Right(chats);  // إذا كانت العملية ناجحة
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));  // لو في مشكلة مع السيرفر
-    }
-  }
-
+  /// جلب المستخدم الحالي
   @override
   Future<Either<Failure, Chat?>> getCurrentUser() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // جلب الـ Chat الخاص بالمستخدم من Firestore
-        final chatDoc = await FirebaseFirestore.instance
-            .collection('chats')
-            .where('userId', isEqualTo: user.uid)
-            .limit(1)
-            .get();
 
-        if (chatDoc.docs.isNotEmpty) {
-          final chat = chatDoc.docs.first;
-          return Right(Chat.fromFirestore(chat));  // إرجاع الـ Chat ككائن
-        } else {
-          return Right(null);  // إذا لم يكن هناك دردشة للمستخدم
-        }
+      if (user == null) {
+        return Right(null); // لا يوجد مستخدم مسجل
+      }
+
+      final querySnapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: user.uid)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final chat = Chat.fromFirestore(querySnapshot.docs.first);
+        return Right(chat);
       } else {
-        return Right(null);  // إذا لم يكن هناك مستخدم مسجل دخول
+        return Right(null); // لم يتم العثور على محادثة
       }
     } catch (e) {
-      // في حالة حدوث أي استثناء آخر
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Error fetching current user chat: ${e.toString()}'));
     }
   }
+
+  /// التحقق من وجود المحادثة بين المستخدمين
+  @override
+  Future<Either<Failure, String?>> checkIfChatExists(String currentUserId, String otherUserId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('chats')
+          .where('participants', arrayContains: currentUserId)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        final participants = List<String>.from(doc['participants']);
+        if (participants.contains(otherUserId)) {
+          return Right(doc.id); // المحادثة موجودة
+        }
+      }
+
+      return const Right(null); // المحادثة غير موجودة
+    } catch (e) {
+      return Left(ServerFailure('Error checking chat existence: ${e.toString()}'));
+    }
+  }
+
+  /// جلب المحادثات الخاصة بالمستخدم الحالي
+ 
 }

@@ -1,7 +1,8 @@
+// chat_cupit_state.dart
+
 part of 'chat_cupit_cubit.dart';
 
-@immutable
-sealed class ChatState {}
+abstract class ChatState {}
 
 class ChatInitial extends ChatState {}
 
@@ -15,16 +16,16 @@ class ChatError extends ChatState {
 
 class ChatMessageSent extends ChatState {}
 
-class ChatChatsLoaded extends ChatState {
-  final List<Chat> chats;
+class ChatMessagesLoaded extends ChatState {
+  final List<Message> messages;
 
-  ChatChatsLoaded({required this.chats});
+  ChatMessagesLoaded({required this.messages});
 }
 
-// الحالة الجديدة عند تحميل المستخدم بنجاح
-class ChatUserLoaded extends ChatState {
-    final Chat chat; 
+class ChatChatExists extends ChatState {
+  final String chatId;
 
-
-  ChatUserLoaded({required this.chat});
+  ChatChatExists({required this.chatId});
 }
+
+class ChatNoChatFound extends ChatState {}

@@ -52,6 +52,7 @@ class FirebaseAuthService {
       throw Exception('Error during logout: ${e.toString()}');
     }
   }
+
   User? getCurrentUser() {
     return _firebaseAuth.currentUser;
 }
