@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:chatapp/pages/cupits/cubit/chat_cupit_cubit.dart';
+import 'package:chatapp/features/chat/presentation/cubit/chat_cupit_cubit.dart';
 
 class ChatPage extends StatelessWidget {
   static const String routeName = '/chat';

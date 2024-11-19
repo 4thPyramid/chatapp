@@ -1,15 +1,15 @@
-import 'package:chatapp/components/custom_drawer.dart';
-import 'package:chatapp/components/custom_user_tile.dart';
+import 'package:chatapp/features/home/presentation/views/widgets/custom_drawer.dart';
+import 'package:chatapp/core/widgets/custom_user_tile.dart';
 import 'package:chatapp/core/services/chat_service.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
-import 'package:chatapp/pages/login_page.dart';
+import 'package:chatapp/features/auth/presentation/views/login_view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // استيراد BlocProvider
+import 'package:flutter_bloc/flutter_bloc.dart'; 
 import 'package:get_it/get_it.dart';
-import 'package:chatapp/pages/cupits/cubit/chat_cupit_cubit.dart'; // استيراد الـ ChatCubit
+import 'package:chatapp/features/chat/presentation/cubit/chat_cupit_cubit.dart'; 
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomeView extends StatelessWidget {
+  const HomeView({super.key});
   static const String routeName = '/home';
 
   @override
@@ -29,7 +29,7 @@ class HomePage extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Logged out successfully')),
                 );
-                Navigator.of(context).pushReplacementNamed(LoginPage.routeName);
+                Navigator.of(context).pushReplacementNamed(LoginView.routeName);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),

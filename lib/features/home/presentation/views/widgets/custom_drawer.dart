@@ -1,6 +1,6 @@
 import 'package:chatapp/core/services/firebase_auth_service.dart';
-import 'package:chatapp/pages/login_page.dart';
-import 'package:chatapp/pages/settings_page.dart';
+import 'package:chatapp/features/auth/presentation/views/login_view.dart';
+import 'package:chatapp/features/auth/presentation/views/settings_page.dart';
 import 'package:flutter/material.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -51,7 +51,7 @@ class CustomDrawer extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Logged out successfully')),
                 );
-                Navigator.of(context).pushReplacementNamed(LoginPage.routeName);
+                Navigator.of(context).pushReplacementNamed(LoginView.routeName);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Error: $e')),
