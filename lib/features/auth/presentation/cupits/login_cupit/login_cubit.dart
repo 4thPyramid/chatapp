@@ -1,5 +1,5 @@
-import 'package:chatapp/pages/cupits/login_cupit/login_state.dart';
-import 'package:chatapp/pages/data/domain/repos/auth_repo/auth_repo.dart';
+import 'package:chatapp/features/auth/presentation/cupits/login_cupit/login_state.dart';
+import 'package:chatapp/features/auth/data/domain/repos/auth_repo/auth_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
  
 

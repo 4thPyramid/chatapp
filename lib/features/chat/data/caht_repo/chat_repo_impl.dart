@@ -2,7 +2,7 @@ import 'package:chatapp/core/errors/failures.dart';
 import 'package:chatapp/core/services/chat/chat.dart';
 import 'package:chatapp/core/services/chat/messages.dart';
 import 'package:chatapp/core/services/chat_service.dart';
-import 'package:chatapp/pages/data/domain/repos/caht_repo/caht_repo.dart';
+import 'package:chatapp/features/chat/data/caht_repo/caht_repo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';

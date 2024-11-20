@@ -1,4 +1,4 @@
-import 'package:chatapp/features/chat/presentation/views/widgets/caht_page_body_view.dart';
+import 'package:chatapp/features/chat/presentation/views/widgets/caht_body_view.dart';
 import 'package:flutter/material.dart';
 
 class ChatView extends StatelessWidget {
@@ -8,7 +8,7 @@ class ChatView extends StatelessWidget {
   final String userName;
   final String receiverId;
 
-  const ChatView({
+  const ChatView({super.key, 
     required this.chatId,
     required this.userId,
     required this.userName,

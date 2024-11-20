@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:logger/logger.dart';  // استيراد مكتبة logger
 import 'package:chatapp/core/services/chat/messages.dart';
-import 'package:chatapp/pages/data/domain/repos/caht_repo/caht_repo.dart';
+import 'package:chatapp/features/chat/data/caht_repo/caht_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'chat_cupit_state.dart';

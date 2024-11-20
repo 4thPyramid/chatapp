@@ -1,5 +1,5 @@
 import 'package:chatapp/features/home/presentation/views/widgets/custom_drawer.dart';
-import 'package:chatapp/core/widgets/custom_user_tile.dart';
+import 'package:chatapp/features/home/presentation/views/widgets/custom_user_tile.dart';
 import 'package:chatapp/core/services/chat_service.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
 import 'package:chatapp/features/auth/presentation/views/login_view.dart';

@@ -1,4 +1,4 @@
-import 'package:chatapp/pages/data/domain/entites/user_intity.dart';  // استيراد UserIntity
+import 'package:chatapp/features/auth/data/domain/entites/user_intity.dart';  // استيراد UserIntity
 
 abstract class LoginState {}
 

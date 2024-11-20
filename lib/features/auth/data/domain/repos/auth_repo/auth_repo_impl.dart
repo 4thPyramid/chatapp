@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:chatapp/pages/data/domain/entites/user_intity.dart';
+import 'package:chatapp/features/auth/data/domain/entites/user_intity.dart';
 import 'package:dartz/dartz.dart';
 import 'package:chatapp/core/errors/failures.dart';
-import 'package:chatapp/pages/data/domain/repos/auth_repo/auth_repo.dart';
+import 'package:chatapp/features/auth/data/domain/repos/auth_repo/auth_repo.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
 
 class AuthRepoImpl implements AuthRepo {

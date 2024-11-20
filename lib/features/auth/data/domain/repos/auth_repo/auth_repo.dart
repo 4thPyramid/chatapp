@@ -1,5 +1,5 @@
 import 'package:chatapp/core/errors/failures.dart';
-import 'package:chatapp/pages/data/domain/entites/user_intity.dart';
+import 'package:chatapp/features/auth/data/domain/entites/user_intity.dart';
 import 'package:dartz/dartz.dart';
 
 abstract class AuthRepo {

@@ -47,7 +47,7 @@ class CustomDrawer extends StatelessWidget {
                 Icons.logout,),
                 onTap: () async {
               try {
-                await FirebaseAuthService().logout(); // استخدم الخدمة هنا
+                await FirebaseAuthService().logout();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Logged out successfully')),
                 );

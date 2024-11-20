@@ -1,5 +1,5 @@
 import 'package:chatapp/features/chat/presentation/views/chat_view.dart';
-import 'package:chatapp/features/home/presentation/views/home_page_view.dart';
+import 'package:chatapp/features/home/presentation/views/home_view.dart';
 import 'package:chatapp/features/auth/presentation/views/login_view.dart';
 import 'package:chatapp/features/auth/presentation/views/register_view.dart';
 import 'package:chatapp/features/auth/presentation/views/settings_page.dart';
@@ -22,7 +22,7 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
       chatId: arguments['chatId'],
       userId: arguments['userId'],
       userName: arguments['userName'],
-      receiverId: arguments['receiverId'], // تمرير receiverId
+      receiverId: arguments['receiverId'], 
     ),
   );
 

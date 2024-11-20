@@ -1,7 +1,7 @@
 import 'package:chatapp/core/services/chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:chatapp/features/chat/presentation/views/chat_page_view.dart';
+import 'package:chatapp/features/chat/presentation/views/chat_view.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
 
 class CustomUserTile extends StatelessWidget {

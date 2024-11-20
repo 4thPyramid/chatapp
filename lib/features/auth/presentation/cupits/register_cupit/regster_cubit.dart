@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:chatapp/pages/data/domain/repos/auth_repo/auth_repo.dart';
+import 'package:chatapp/features/auth/data/domain/repos/auth_repo/auth_repo.dart';
 import 'package:meta/meta.dart';
 
 
