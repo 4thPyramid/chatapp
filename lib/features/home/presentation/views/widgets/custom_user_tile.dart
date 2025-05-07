@@ -1,51 +1,40 @@
-import 'package:chatapp/core/services/chat_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:chatapp/features/chat/presentation/views/chat_view.dart';
+import 'package:chatapp/core/services/chat_service.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
+import 'package:chatapp/features/chat/presentation/views/chat_view.dart';
 
 class CustomUserTile extends StatelessWidget {
-  const CustomUserTile({super.key, required this.user});
-
   final Map<String, dynamic> user;
+
+  const CustomUserTile({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ListTile(
+      title: Text(user['name']),
+      subtitle: Text(user['email']),
       onTap: () async {
-        final currentUser = FirebaseAuthService().getCurrentUser();
-        if (currentUser == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You need to sign in first!')),
-          );
-          return;
-        }
+        final currentUser = GetIt.I<FirebaseAuthService>().getCurrentUser();
+        if (currentUser == null) return;
 
         try {
-          // إنشاء دردشة جديدة والحصول على معرف الدردشة
-          final chatId = await GetIt.instance<ChatService>().createChat(user['uid']);
-
-          // الانتقال إلى صفحة الدردشة مع تمرير المعطيات
+          final chatId = await GetIt.I<ChatService>().createChat(user['uid']);
           Navigator.of(context).pushNamed(
             ChatView.routeName,
             arguments: {
               'chatId': chatId,
-              'userId': currentUser.uid, // معرف المستخدم الحالي
-              'userName': user['name'],  // اسم المستخدم المستهدف
-              'receiverId': user['uid'], // معرف المستقبل
+              'userId': currentUser.uid,
+              'receiverId': user['uid'],
+              'userName': user['name'],
             },
           );
         } catch (e) {
-          // التعامل مع الأخطاء
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to create chat: $e')),
+            SnackBar(content: Text('Error creating chat: $e')),
           );
         }
       },
-      child: ListTile(
-        title: Text(user['name'] ?? 'No Name'),
-        subtitle: Text(user['email'] ?? 'No Email'),
-      ),
     );
   }
 }
