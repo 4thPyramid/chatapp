@@ -1,4 +1,7 @@
-import 'package:chatapp/core/services/chat/messages.dart';
+import 'package:chatapp/core/models/chat_model.dart';
+import 'package:chatapp/core/models/message_model.dart';
+import 'package:chatapp/core/models/user_model.dart';
+import 'package:chatapp/core/services/notification/fcm_notification.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -6,116 +9,102 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // دالة للحصول على المستخدم الحالي
-  User? getCurrentUser() {
-    return _auth.currentUser;
-  }
+  User? get currentUser => _auth.currentUser;
 
-  // دالة لجلب جميع المستخدمين الآخرين (ما عدا المستخدم الحالي)
-  Stream<List<Map<String, dynamic>>> getOtherUsersStream() {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) return Stream.value([]); // إعادة Stream فارغ إذا لم يكن هناك مستخدم.
+  /// جلب المستخدمين الآخرين (ما عدا الحالي)
+  Stream<List<UserModel>> getOtherUsersStream() {
+    final uid = currentUser?.uid;
+    if (uid == null) return Stream.value([]);
 
     return _firestore.collection('users').snapshots().map((snapshot) {
       return snapshot.docs
-          .where((doc) => doc.id != currentUser.uid)
-          .map((doc) => {
-                ...doc.data(),
-                'name': doc.data()['name'] ?? 'Unknown',
-                'email': doc.data()['email'] ?? 'No Email',
-              })
+          .where((doc) => doc.id != uid)
+          .map((doc) => UserModel.fromMap(doc.data(), doc.id))
           .toList();
     });
   }
 
-  // إرسال رسالة إلى محادثة معينة
-  Future<void> sendMessage(String chatId, String senderId, String receiverId, String text) async {
+  /// إرسال رسالة وتحديث المحادثة وإرسال إشعار
+  Future<void> sendMessage(String chatId, MessageModel message) async {
     try {
-      // إضافة الرسالة إلى مجموعة الرسائل
-      await _firestore.collection('chats').doc(chatId).collection('messages').add({
-        'text': text,
-        'senderId': senderId,
-        'receiverId': receiverId,  // إضافة receiverId
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      final messageRef = _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .doc();
 
-      // تحديث بيانات المحادثة الرئيسية
+      await messageRef.set(message.toMap());
+
       await _firestore.collection('chats').doc(chatId).update({
-        'lastMessage': text,
-        'timestamp': FieldValue.serverTimestamp(),
+        'lastMessage': message.text,
+        'timestamp': message.timestamp,
       });
 
-      print('Message sent: $text to chat $chatId by user $senderId to $receiverId');
+      await FCMService.sendNotificationToUser(
+        receiverId: message.receiverId,
+        title: 'رسالة جديدة',
+        body: message.text,
+        data: {
+          'chatId': chatId,
+        },
+      );
+
+      print('✅ Message sent: ${message.text}');
     } catch (e) {
-      print('Error sending message: $e');
+      print('❌ Error sending message: $e');
       rethrow;
     }
   }
 
-  // استرجاع الرسائل الخاصة بدردشة معينة
-  Stream<List<Message>> getMessages(String chatId) {
+  /// استرجاع رسائل دردشة معينة
+  Stream<List<MessageModel>> getMessages(String chatId) {
     return _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return Message.fromFirestore(doc);
-      }).toList();
-    });
+        .map((snapshot) => snapshot.docs
+            .map((doc) => MessageModel.fromMap(doc.data()))
+            .toList());
   }
 
-  // جلب جميع المحادثات الخاصة بالمستخدم الحالي
-  Stream<List<Map<String, dynamic>>> getUserChats() {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) return Stream.value([]);
+  /// استرجاع محادثات المستخدم
+  Stream<List<ChatModel>> getUserChats() {
+    final uid = currentUser?.uid;
+    if (uid == null) return Stream.value([]);
 
     return _firestore
         .collection('chats')
-        .where('participants', arrayContains: currentUser.uid)
+        .where('participants', arrayContains: uid)
         .orderBy('timestamp', descending: true)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => doc.data()).toList();
-    });
+        .map((snapshot) => snapshot.docs
+            .map((doc) => ChatModel.fromMap(doc.data(), doc.id))
+            .toList());
   }
 
-  // إنشاء محادثة جديدة بين المستخدمين
+  /// إنشاء محادثة أو إعادة استخدامها
   Future<String> createChat(String otherUserId) async {
-    final currentUser = _auth.currentUser;
-    if (currentUser == null) {
-      throw Exception('No user is logged in');
+    final uid = currentUser?.uid;
+    if (uid == null) throw Exception('User not logged in');
+
+    final existing = await _firestore
+        .collection('chats')
+        .where('participants', arrayContains: uid)
+        .get();
+
+    for (var doc in existing.docs) {
+      final participants = List<String>.from(doc.data()['participants']);
+      if (participants.contains(otherUserId)) return doc.id;
     }
 
-    try {
-      // التحقق من وجود محادثة مسبقة
-      final existingChat = await _firestore
-          .collection('chats')
-          .where('participants', arrayContains: currentUser.uid)
-          .get();
+    final chatRef = await _firestore.collection('chats').add({
+      'participants': [uid, otherUserId],
+      'lastMessage': '',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
 
-      for (var doc in existingChat.docs) {
-        final participants = doc.data()['participants'] as List;
-        if (participants.contains(otherUserId)) {
-          print('Chat already exists: ${doc.id}');
-          return doc.id; // إرجاع chatId للمحادثة الموجودة
-        }
-      }
-
-      // إذا لم تكن هناك محادثة موجودة، إنشاء محادثة جديدة
-      final chatRef = await _firestore.collection('chats').add({
-        'participants': [currentUser.uid, otherUserId],
-        'lastMessage': 'No messages yet',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      print('New chat created: ${chatRef.id}');
-      return chatRef.id;
-    } catch (e) {
-      print('Error creating chat: $e');
-      throw Exception('Failed to create chat');
-    }
+    return chatRef.id;
   }
 }

@@ -21,8 +21,10 @@ class ChatBodyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          GetIt.I<ChatCubit>()..checkIfChatExists(userId, receiverId),
+      create: (context) => GetIt.I<ChatCubit>()
+        ..createOrLoadChat(
+          userId,
+        ),
       child: Scaffold(
         appBar: AppBar(
           title: Text(userName),

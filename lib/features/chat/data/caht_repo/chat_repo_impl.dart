@@ -15,13 +15,18 @@ class ChatRepoImpl implements ChatRepo {
 
   /// إرسال رسالة
   @override
-  Future<Either<Failure, void>> sendMessage(String chatId, String senderId, String receiverId, String text) async {
+  Future<Either<Failure, void>> sendMessage(
+      String chatId, String senderId, String receiverId, String text) async {
     try {
       // إضافة الرسالة إلى مجموعة الرسائل
-      await _firestore.collection('chats').doc(chatId).collection('messages').add({
+      await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .add({
         'text': text,
         'senderId': senderId,
-        'receiverId': receiverId,  // إضافة receiverId
+        'receiverId': receiverId, // إضافة receiverId
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -35,16 +40,12 @@ class ChatRepoImpl implements ChatRepo {
       return Right(null); // تم إرسال الرسالة بنجاح
     } catch (e) {
       print('Error sending message: $e');
-      return Left(ServerFailure('Error sending message: ${e.toString()}')); // إعادة خطأ
+      return Left(
+          ServerFailure('Error sending message: ${e.toString()}')); // إعادة خطأ
     }
   }
 
   /// جلب الرسائل
-  @override
-  Stream<List<Message>> getMessages(String chatId) {
-    return chatService.getMessages(chatId);
-  }
-
   /// جلب المستخدم الحالي
   @override
   Future<Either<Failure, Chat?>> getCurrentUser() async {
@@ -68,13 +69,15 @@ class ChatRepoImpl implements ChatRepo {
         return Right(null); // لم يتم العثور على محادثة
       }
     } catch (e) {
-      return Left(ServerFailure('Error fetching current user chat: ${e.toString()}'));
+      return Left(
+          ServerFailure('Error fetching current user chat: ${e.toString()}'));
     }
   }
 
   /// التحقق من وجود المحادثة بين المستخدمين
   @override
-  Future<Either<Failure, String?>> checkIfChatExists(String currentUserId, String otherUserId) async {
+  Future<Either<Failure, String?>> checkIfChatExists(
+      String currentUserId, String otherUserId) async {
     try {
       final querySnapshot = await _firestore
           .collection('chats')
@@ -90,10 +93,10 @@ class ChatRepoImpl implements ChatRepo {
 
       return const Right(null); // المحادثة غير موجودة
     } catch (e) {
-      return Left(ServerFailure('Error checking chat existence: ${e.toString()}'));
+      return Left(
+          ServerFailure('Error checking chat existence: ${e.toString()}'));
     }
   }
 
   /// جلب المحادثات الخاصة بالمستخدم الحالي
- 
 }

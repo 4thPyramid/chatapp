@@ -15,24 +15,30 @@ final getIt = GetIt.instance;
 void setup() {
   // قم بتسجيل FirebaseAuthService
   getIt.registerLazySingleton<FirebaseAuthService>(() => FirebaseAuthService());
-  
+
   // قم بتسجيل Firestore
-  getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+  getIt.registerLazySingleton<FirebaseFirestore>(
+      () => FirebaseFirestore.instance);
 
   // قم بتسجيل ChatService
   getIt.registerLazySingleton<ChatService>(() => ChatService());
-  
+
   // قم بتسجيل ChatRepo
-  getIt.registerLazySingleton<ChatRepo>(() => ChatRepoImpl(chatService: getIt<ChatService>()));
-  
+  getIt.registerLazySingleton<ChatRepo>(
+      () => ChatRepoImpl(chatService: getIt<ChatService>()));
+
   // قم بتسجيل ChatCubit
-  getIt.registerFactory<ChatCubit>(() => ChatCubit(chatRepo: getIt<ChatRepo>()));
+  GetIt.I.registerLazySingleton(() => ChatService());
+  GetIt.I.registerFactory(() => ChatCubit(chatService: GetIt.I<ChatService>()));
 
   // قم بتسجيل AuthRepoImpl باستخدام FirebaseAuthService و FirebaseFirestore
-  getIt.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(firebaseAuthService: getIt<FirebaseAuthService>(), firestore: getIt<FirebaseFirestore>()));
+  getIt.registerLazySingleton<AuthRepo>(() => AuthRepoImpl(
+      firebaseAuthService: getIt<FirebaseAuthService>(),
+      firestore: getIt<FirebaseFirestore>()));
 
   // قم بتسجيل RegsterCubit باستخدام AuthRepo
-  getIt.registerFactory<RegsterCubit>(() => RegsterCubit(authRepo: getIt<AuthRepo>()));
+  getIt.registerFactory<RegsterCubit>(
+      () => RegsterCubit(authRepo: getIt<AuthRepo>()));
 
   // قم بتسجيل LoginCubit
   getIt.registerFactory<LoginCubit>(() => LoginCubit(getIt<AuthRepo>()));

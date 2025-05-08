@@ -4,9 +4,9 @@ import 'package:chatapp/core/services/chat_service.dart';
 import 'package:chatapp/core/services/firebase_auth_service.dart';
 import 'package:chatapp/features/auth/presentation/views/login_view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; 
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:chatapp/features/chat/presentation/cubit/chat_cupit_cubit.dart'; 
+import 'package:chatapp/features/chat/presentation/cubit/chat_cupit_cubit.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -42,35 +42,38 @@ class HomeView extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       drawer: const CustomDrawer(),
-      body:  BlocProvider(
-  create: (context) => GetIt.instance<ChatCubit>(), 
-  child: StreamBuilder<List<Map<String, dynamic>>>(
-    stream: chatService.getOtherUsersStream(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return const Center(child: Text("No other users found"));
-      }
+      body: BlocProvider(
+        create: (context) => GetIt.instance<ChatCubit>(),
+        child: StreamBuilder<List<Map<String, dynamic>>>(
+          stream: chatService.getOtherUsersStream().map(
+                (users) => users.map((user) => user.toMap()).toList(),
+              ),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text("No other users found"));
+            }
 
-      final users = snapshot.data!.where((user) => user['email'] != currentUser?.email).toList();
+            final users = snapshot.data!
+                .where((user) => user['email'] != currentUser?.email)
+                .toList();
 
-      if (users.isEmpty) {
-        return const Center(child: Text("No other users found"));
-      }
+            if (users.isEmpty) {
+              return const Center(child: Text("No other users found"));
+            }
 
-      return ListView.builder(
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          final user = users[index];
-          return CustomUserTile(user: user);
-        },
-      );
-    },
-  ),
-),
-  );
+            return ListView.builder(
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return CustomUserTile(user: user);
+              },
+            );
+          },
+        ),
+      ),
+    );
   }
 }
-

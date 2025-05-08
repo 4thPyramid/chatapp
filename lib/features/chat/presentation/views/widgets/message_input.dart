@@ -1,3 +1,4 @@
+import 'package:chatapp/core/models/message_model.dart' show MessageModel;
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
@@ -27,9 +28,12 @@ class _MessageInputState extends State<MessageInput> {
     if (text.isNotEmpty) {
       GetIt.I<ChatCubit>().sendMessage(
         widget.chatId,
-        widget.senderId,
-        widget.receiverId,
-        text,
+        MessageModel(
+          senderId: widget.senderId,
+          receiverId: widget.receiverId,
+          text: text,
+          timestamp: DateTime.now(),
+        ),
       );
       _controller.clear();
     }
